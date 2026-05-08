@@ -3,8 +3,11 @@ import { requireAuth, requireProjectRole } from "../auth/authMiddleware.js";
 import { validateBody } from "../http/validate.js";
 import { createProjectSchema, updateProjectSchema, addMemberSchema, changeMemberRoleSchema } from "./projectSchemas.js";
 import * as service from "./projectService.js";
+import { taskRoutes } from "../tasks/taskRoutes.js";
 
 export const projectRoutes = Router();
+
+projectRoutes.use("/:projectId/tasks", taskRoutes);
 
 // Projects
 projectRoutes.post("/", requireAuth, validateBody(createProjectSchema), async (req, res, next) => {

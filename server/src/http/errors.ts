@@ -30,6 +30,10 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
 
   // Avoid leaking internals; keep it consistent
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.error(err);
+  }
   res.status(500).json({
     error: {
       message: "Internal server error"
