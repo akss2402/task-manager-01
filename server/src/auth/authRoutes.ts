@@ -13,7 +13,8 @@ function setRefreshCookie(res: any, refreshToken: string) {
     httpOnly: true,
     sameSite: "lax",
     secure: COOKIE_SECURE,
-    path: "/auth/refresh"
+    path: "/"
+
   });
 }
 
@@ -23,7 +24,8 @@ function clearRefreshCookie(res: any) {
     httpOnly: true,
     sameSite: "lax",
     secure: COOKIE_SECURE,
-    path: "/auth/refresh"
+    path: "/"
+
   });
 }
 

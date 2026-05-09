@@ -6,12 +6,13 @@ export type DbUser = {
   name: string;
   email: string;
   password_hash: string;
+  role: 'admin' | 'member';
 };
 
 export async function findUserByEmail(email: string, client?: PoolClient) {
   const c = client ?? pool;
   const res = await c.query<DbUser>(
-    "select id, name, email, password_hash from users where lower(email) = lower($1) limit 1",
+    "select id, name, email, password_hash, role from users where lower(email) = lower($1) limit 1",
     [email]
   );
   return res.rows[0] ?? null;
@@ -20,18 +21,18 @@ export async function findUserByEmail(email: string, client?: PoolClient) {
 export async function findUserById(id: string, client?: PoolClient) {
   const c = client ?? pool;
   const res = await c.query<Omit<DbUser, "password_hash">>(
-    "select id, name, email from users where id = $1 limit 1",
+    "select id, name, email, role from users where id = $1 limit 1",
     [id]
   );
   return res.rows[0] ?? null;
 }
 
-export async function createUser(input: { name: string; email: string; passwordHash: string }) {
-  const res = await pool.query<{ id: string; name: string; email: string }>(
-    `insert into users (name, email, password_hash)
-     values ($1, $2, $3)
-     returning id, name, email`,
-    [input.name, input.email, input.passwordHash]
+export async function createUser(input: { name: string; email: string; passwordHash: string; role?: string }) {
+  const res = await pool.query<{ id: string; name: string; email: string; role: string }>(
+    `insert into users (name, email, password_hash, role)
+     values ($1, $2, $3, $4)
+     returning id, name, email, role`,
+    [input.name, input.email, input.passwordHash, input.role ?? 'member']
   );
   return res.rows[0]!;
 }

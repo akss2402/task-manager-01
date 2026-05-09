@@ -1,9 +1,11 @@
 import { HttpError } from "../http/errors.js";
 import * as repo from "./taskRepo.js";
+import { upsertMember } from "../projects/projectRepo.js";
 
 export async function createTask(input: {
   projectId: string;
   createdBy: string;
+  creatorRole?: string;
   title: string;
   description?: string;
   status?: repo.DbTask["status"];
@@ -14,9 +16,14 @@ export async function createTask(input: {
   if (input.assigneeId) {
     const ok = await repo.isProjectMember(input.projectId, input.assigneeId);
     if (!ok) {
-      throw new HttpError(400, "Assignee must be a member of the project", {
-        code: "ASSIGNEE_NOT_MEMBER"
-      });
+      if (input.creatorRole === 'admin') {
+        // Auto-add member to project if creator is an admin
+        await upsertMember(input.projectId, input.assigneeId, 'member');
+      } else {
+        throw new HttpError(400, "Assignee must be a member of the project", {
+          code: "ASSIGNEE_NOT_MEMBER"
+        });
+      }
     }
   }
   return repo.createTask(input);
@@ -42,6 +49,7 @@ export async function getTask(projectId: string, taskId: string) {
 export async function updateTask(input: {
   projectId: string;
   taskId: string;
+  creatorRole?: string;
   patch: Partial<{
     title: string;
     description: string | null;
@@ -54,9 +62,14 @@ export async function updateTask(input: {
   if (typeof input.patch.assigneeId !== "undefined" && input.patch.assigneeId !== null) {
     const ok = await repo.isProjectMember(input.projectId, input.patch.assigneeId);
     if (!ok) {
-      throw new HttpError(400, "Assignee must be a member of the project", {
-        code: "ASSIGNEE_NOT_MEMBER"
-      });
+      if (input.creatorRole === 'admin') {
+        // Auto-add member to project if updater is an admin
+        await upsertMember(input.projectId, input.patch.assigneeId, 'member');
+      } else {
+        throw new HttpError(400, "Assignee must be a member of the project", {
+          code: "ASSIGNEE_NOT_MEMBER"
+        });
+      }
     }
   }
   const updated = await repo.updateTask(input.taskId, input.projectId, input.patch);

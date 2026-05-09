@@ -12,7 +12,9 @@ export type DbTask = {
   created_by: string;
   created_at: string;
   updated_at: string;
+  assignee_name?: string;
 };
+
 
 export async function createTask(input: {
   projectId: string;
@@ -44,14 +46,17 @@ export async function createTask(input: {
 
 export async function getTaskForProject(taskId: string, projectId: string) {
   const res = await pool.query<DbTask>(
-    `select id, project_id, title, description, status, priority, assignee_id, due_date, created_by, created_at, updated_at
-     from tasks
-     where id = $1 and project_id = $2
+    `select t.id, t.project_id, t.title, t.description, t.status, t.priority, t.assignee_id, t.due_date, t.created_by, t.created_at, t.updated_at,
+            u.name as assignee_name
+     from tasks t
+     left join users u on t.assignee_id = u.id
+     where t.id = $1 and t.project_id = $2
      limit 1`,
     [taskId, projectId]
   );
   return res.rows[0] ?? null;
 }
+
 
 export async function listTasks(input: {
   projectId: string;
@@ -61,41 +66,44 @@ export async function listTasks(input: {
   dueAfter?: string;
   q?: string;
 }) {
-  const where: string[] = ["project_id = $1"];
+  const where: string[] = ["t.project_id = $1"];
   const values: unknown[] = [input.projectId];
   let idx = 2;
 
   if (input.status) {
-    where.push(`status = $${idx++}`);
+    where.push(`t.status = $${idx++}`);
     values.push(input.status);
   }
   if (input.assigneeId) {
-    where.push(`assignee_id = $${idx++}`);
+    where.push(`t.assignee_id = $${idx++}`);
     values.push(input.assigneeId);
   }
   if (input.dueBefore) {
-    where.push(`due_date < $${idx++}`);
+    where.push(`t.due_date < $${idx++}`);
     values.push(input.dueBefore);
   }
   if (input.dueAfter) {
-    where.push(`due_date > $${idx++}`);
+    where.push(`t.due_date > $${idx++}`);
     values.push(input.dueAfter);
   }
   if (input.q) {
-    where.push(`(title ilike $${idx} or description ilike $${idx})`);
+    where.push(`(t.title ilike $${idx} or t.description ilike $${idx})`);
     values.push(`%${input.q}%`);
     idx++;
   }
 
   const res = await pool.query<DbTask>(
-    `select id, project_id, title, description, status, priority, assignee_id, due_date, created_by, created_at, updated_at
-     from tasks
+    `select t.id, t.project_id, t.title, t.description, t.status, t.priority, t.assignee_id, t.due_date, t.created_by, t.created_at, t.updated_at,
+            u.name as assignee_name
+     from tasks t
+     left join users u on t.assignee_id = u.id
      where ${where.join(" and ")}
-     order by created_at desc`,
+     order by t.created_at desc`,
     values
   );
   return res.rows;
 }
+
 
 export async function updateTask(taskId: string, projectId: string, input: Partial<{
   title: string;

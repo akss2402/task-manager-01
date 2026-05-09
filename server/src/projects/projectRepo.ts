@@ -49,10 +49,10 @@ export async function createProjectWithCreatorMember(input: {
   const client = await pool.connect();
   try {
     await client.query("begin");
-    const projectRes = await client.query<{ id: string; name: string; description: string | null }>(
+    const projectRes = await client.query<{ id: string; name: string; description: string | null; created_at: string; updated_at: string }>(
       `insert into projects (name, description, created_by)
        values ($1, $2, $3)
-       returning id, name, description`,
+       returning id, name, description, created_at, updated_at`,
       [input.name, input.description ?? null, input.userId]
     );
     const project = projectRes.rows[0]!;

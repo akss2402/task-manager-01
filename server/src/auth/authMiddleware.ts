@@ -4,15 +4,14 @@ import { verifyAccessToken } from "../utils/jwt.js";
 import { pool } from "../db/index.js";
 
 declare global {
-  // eslint-disable-next-line no-var
   namespace Express {
     interface Request {
-      user?: { id: string };
+      user?: { id: string; role: 'admin' | 'member' };
     }
   }
 }
 
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   const header = req.header("authorization") ?? "";
   const match = header.match(/^Bearer\s+(.+)$/i);
   if (!match) {
@@ -22,7 +21,19 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
 
   try {
     const payload = verifyAccessToken(match[1]);
-    req.user = { id: payload.sub };
+    
+    // Fetch user role from DB
+    const userRes = await pool.query<{ role: 'admin' | 'member' }>(
+      'select role from users where id = $1',
+      [payload.sub]
+    );
+    
+    if (!userRes.rows[0]) {
+      next(new HttpError(401, "User not found", { code: "USER_NOT_FOUND" }));
+      return;
+    }
+
+    req.user = { id: payload.sub, role: userRes.rows[0].role };
     next();
   } catch {
     next(new HttpError(401, "Invalid access token", { code: "INVALID_ACCESS_TOKEN" }));

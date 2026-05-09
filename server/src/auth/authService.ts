@@ -26,12 +26,12 @@ function computeRefreshExpiryDate(ttl: string) {
   return new Date(Date.now() + ms);
 }
 
-export async function signup(input: { name: string; email: string; password: string }) {
+export async function signup(input: { name: string; email: string; password: string; role?: string }) {
   const existing = await repo.findUserByEmail(input.email);
   if (existing) throw new HttpError(409, "Email already in use", { code: "EMAIL_TAKEN" });
 
   const passwordHash = await hashPassword(input.password);
-  const user = await repo.createUser({ name: input.name, email: input.email, passwordHash });
+  const user = await repo.createUser({ name: input.name, email: input.email, passwordHash, role: input.role });
   return user;
 }
 
@@ -42,7 +42,7 @@ export async function login(input: { email: string; password: string }) {
   const ok = await verifyPassword(input.password, user.password_hash);
   if (!ok) throw new HttpError(401, "Invalid credentials", { code: "INVALID_CREDENTIALS" });
 
-  return { id: user.id, name: user.name, email: user.email };
+  return { id: user.id, name: user.name, email: user.email, role: user.role };
 }
 
 export async function issueTokensForUser(userId: string, refreshTtl: string) {

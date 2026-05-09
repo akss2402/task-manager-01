@@ -9,7 +9,7 @@ export const taskRoutes = Router({ mergeParams: true });
 taskRoutes.post(
   "/",
   requireAuth,
-  requireProjectRole("projectId", ["admin", "member"]),
+  requireProjectRole("projectId", ["admin"]),
   validateBody(createTaskSchema),
   async (req, res, next) => {
     try {
@@ -17,6 +17,7 @@ taskRoutes.post(
       const task = await service.createTask({
         projectId,
         createdBy: req.user!.id,
+        creatorRole: req.user!.role,
         title: req.body.title,
         description: req.body.description,
         status: req.body.status,
@@ -83,6 +84,7 @@ taskRoutes.patch(
       const task = await service.updateTask({
         projectId,
         taskId,
+        creatorRole: req.user!.role,
         patch: {
           title: req.body.title,
           description: req.body.description,
