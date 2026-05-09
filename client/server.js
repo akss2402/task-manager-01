@@ -178,7 +178,8 @@ server.on('clientError', (err, socket) => {
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+// CRITICAL: Use explicit callback for listen to verify port binding
+const listener = server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n╔════════════════════════════════════════╗`);
   console.log(`║  ✅ Server running on port ${PORT}       ║`);
   console.log(`║  📂 Serving: ${DIST_DIR}`);
@@ -186,4 +187,35 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`║  📋 Health check: /health              ║`);
   console.log(`╚════════════════════════════════════════╝\n`);
   console.log(`[${new Date().toISOString()}] ✨ Ready to accept requests!\n`);
+  
+  // Log every 30 seconds to prove server is alive
+  setInterval(() => {
+    console.log(`[${new Date().toISOString()}] 💚 Server still alive and listening on port ${PORT}`);
+  }, 30000);
 });
+
+// CRITICAL: Handle listen errors explicitly
+listener.on('error', (err) => {
+  console.error(`\n❌ FATAL: Failed to bind to port ${PORT}`);
+  console.error(`Error: ${err.message}`);
+  console.error(`Code: ${err.code}`);
+  
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use!`);
+  } else if (err.code === 'EACCES') {
+    console.error(`Permission denied to bind to port ${PORT}`);
+  }
+  
+  // Try alternative port if primary fails
+  if (PORT !== 3000) {
+    console.log(`\nAttempting to bind to port 3000 instead...`);
+    server.listen(3000, '0.0.0.0', () => {
+      console.log(`✅ Fallback: Server now running on port 3000`);
+    });
+  } else {
+    process.exit(1);
+  }
+});
+
+// Keep the process alive indefinitely
+process.stdin.resume();

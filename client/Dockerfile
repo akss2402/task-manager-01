@@ -30,10 +30,10 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY server.js .
 
-# Railway sets PORT env var automatically
-# Default to 3000 if not set (for local development)
+# Don't hardcode port - Railway sets it via PORT env var
+# But expose both common ports for flexibility
 EXPOSE 3000 8080
 
-# Start the app
+# Start the app - let server.js use PORT env var
 CMD ["npm", "start"]
 
