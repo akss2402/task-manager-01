@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { z } from "zod";
 
 const booleanFromEnv = z.preprocess((v) => {
@@ -27,7 +28,9 @@ export function getConfig(): AppConfig {
   const parsed = configSchema.safeParse(process.env);
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
-    throw new Error(`Invalid environment configuration: ${msg}`);
+    const errorMsg = `Invalid environment configuration: ${msg}`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
   return parsed.data;
 }
