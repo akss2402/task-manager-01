@@ -12,9 +12,18 @@ export function createApp() {
   const app = express();
   const { CORS_ORIGIN } = getConfig();
 
+  // app.use(
+  //   cors({
+  //     origin: CORS_ORIGIN ? CORS_ORIGIN.split(",").map((s) => s.trim()) : true,
+  //     credentials: true
+  //   })
+  // );
+
   app.use(
     cors({
-      origin: CORS_ORIGIN ? CORS_ORIGIN.split(",").map((s) => s.trim()) : true,
+      origin: CORS_ORIGIN
+        ? CORS_ORIGIN.split(",").map((s) => s.trim())
+        : ["https://task-manager-01-ac42.vercel.app"],
       credentials: true
     })
   );
