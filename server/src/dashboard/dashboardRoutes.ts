@@ -35,7 +35,7 @@ dashboardRoutes.get(
   requireProjectRole("projectId", ["admin", "member"]),
   async (req, res, next) => {
     try {
-      const stats = await service.getProjectStats(req.params.projectId);
+      const stats = await service.getProjectStats(String(req.params.projectId));
       res.json(stats);
     } catch (e) {
       next(e);
