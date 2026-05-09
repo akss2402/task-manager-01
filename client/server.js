@@ -29,16 +29,36 @@ if (!fs.existsSync(indexPath)) {
 console.log(`✓ dist directory exists`);
 console.log(`✓ index.html found`);
 
+// Global error handlers to prevent crash
+process.on('uncaughtException', (err) => {
+  console.error(`[${new Date().toISOString()}] ❌ UNCAUGHT EXCEPTION:`, err.message);
+  console.error(err.stack);
+  // Don't exit - keep server running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`[${new Date().toISOString()}] ❌ UNHANDLED REJECTION:`, reason);
+  // Don't exit - keep server running
+});
+
 const server = http.createServer((req, res) => {
+  // Prevent response errors from crashing the server
+  res.on('error', (err) => {
+    console.error(`[${new Date().toISOString()}] ❌ Response error: ${err.message}`);
+  });
+
   const startTime = Date.now();
-  console.log(`[${new Date().toISOString()}] 📨 REQUEST: ${req.method} ${req.url}`);
   
   try {
+    console.log(`[${new Date().toISOString()}] 📨 REQUEST: ${req.method} ${req.url}`);
+    
     // Health check endpoint for debugging
     if (req.url === '/health' || req.url === '/health/') {
       console.log(`[${new Date().toISOString()}] ✓ Health check OK`);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+      if (!res.headersSent) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+      }
       return;
     }
 
@@ -55,8 +75,10 @@ const server = http.createServer((req, res) => {
     // Security: ensure file is within DIST_DIR
     if (!filePath.startsWith(DIST_DIR)) {
       console.log(`[${new Date().toISOString()}] ❌ FORBIDDEN: Path traversal attempt`);
-      res.writeHead(403, { 'Content-Type': 'text/plain' });
-      res.end('Forbidden');
+      if (!res.headersSent) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden');
+      }
       return;
     }
 
@@ -70,19 +92,23 @@ const server = http.createServer((req, res) => {
             try {
               if (indexErr) {
                 console.error(`[${new Date().toISOString()}] ❌ ERROR reading index.html: ${indexErr.message}`);
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Internal Server Error - Could not read index.html');
+                if (!res.headersSent) {
+                  res.writeHead(500, { 'Content-Type': 'text/plain' });
+                  res.end('Internal Server Error - Could not read index.html');
+                }
                 return;
               }
               console.log(`[${new Date().toISOString()}] ✓ SERVE: index.html (${indexData.length} bytes) [${Date.now() - startTime}ms]`);
-              res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-              res.end(indexData);
+              if (!res.headersSent) {
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(indexData);
+              }
             } catch (e) {
               console.error(`[${new Date().toISOString()}] ❌ ERROR in index.html callback: ${e.message}`);
               if (!res.headersSent) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Internal Server Error');
               }
-              res.end('Internal Server Error');
             }
           });
           return;
@@ -113,14 +139,17 @@ const server = http.createServer((req, res) => {
         contentType = mimeTypes[ext] || contentType;
 
         console.log(`[${new Date().toISOString()}] ✓ SERVE: ${path.basename(filePath)} (${data.length} bytes, ${contentType}) [${Date.now() - startTime}ms]`);
-        res.writeHead(200, { 'Content-Type': contentType });
-        res.end(data);
+        if (!res.headersSent) {
+          res.writeHead(200, { 'Content-Type': contentType });
+          res.end(data);
+        }
       } catch (e) {
         console.error(`[${new Date().toISOString()}] ❌ ERROR in file read callback: ${e.message}`);
+        console.error(e.stack);
         if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Internal Server Error');
         }
-        res.end('Internal Server Error');
       }
     });
   } catch (err) {
@@ -128,8 +157,8 @@ const server = http.createServer((req, res) => {
     console.error(err.stack);
     if (!res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Internal Server Error');
     }
-    res.end('Internal Server Error');
   }
 });
 
@@ -140,8 +169,12 @@ server.on('error', (err) => {
 
 server.on('clientError', (err, socket) => {
   console.error(`[${new Date().toISOString()}] ❌ CLIENT ERROR: ${err.message}`);
-  if (socket.writable) {
-    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  try {
+    if (socket.writable) {
+      socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+    }
+  } catch (e) {
+    console.error('Error sending error response:', e.message);
   }
 });
 
@@ -152,4 +185,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`║  🌐 Listening on: 0.0.0.0:${PORT}              ║`);
   console.log(`║  📋 Health check: /health              ║`);
   console.log(`╚════════════════════════════════════════╝\n`);
+  console.log(`[${new Date().toISOString()}] ✨ Ready to accept requests!\n`);
 });
