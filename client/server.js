@@ -30,7 +30,18 @@ console.log(`✓ dist directory exists`);
 console.log(`✓ index.html found`);
 
 const server = http.createServer((req, res) => {
+  const startTime = Date.now();
+  console.log(`[${new Date().toISOString()}] 📨 REQUEST: ${req.method} ${req.url}`);
+  
   try {
+    // Health check endpoint for debugging
+    if (req.url === '/health' || req.url === '/health/') {
+      console.log(`[${new Date().toISOString()}] ✓ Health check OK`);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+      return;
+    }
+
     // Prevent directory traversal attacks
     let urlPath = req.url.split('?')[0]; // Remove query strings
     if (urlPath === '/') {
@@ -39,8 +50,11 @@ const server = http.createServer((req, res) => {
     
     let filePath = path.join(DIST_DIR, urlPath);
     
+    console.log(`[${new Date().toISOString()}] 📂 RESOLVING: ${urlPath} => ${filePath}`);
+    
     // Security: ensure file is within DIST_DIR
     if (!filePath.startsWith(DIST_DIR)) {
+      console.log(`[${new Date().toISOString()}] ❌ FORBIDDEN: Path traversal attempt`);
       res.writeHead(403, { 'Content-Type': 'text/plain' });
       res.end('Forbidden');
       return;
@@ -50,19 +64,21 @@ const server = http.createServer((req, res) => {
     fs.readFile(filePath, (err, data) => {
       try {
         if (err) {
+          console.log(`[${new Date().toISOString()}] ⚠️ FILE NOT FOUND: ${filePath} - ${err.code}`);
           // If file not found, serve index.html (for SPA routing)
           fs.readFile(indexPath, (indexErr, indexData) => {
             try {
               if (indexErr) {
-                console.error('Error reading index.html:', indexErr.message);
+                console.error(`[${new Date().toISOString()}] ❌ ERROR reading index.html: ${indexErr.message}`);
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
-                res.end('Internal Server Error');
+                res.end('Internal Server Error - Could not read index.html');
                 return;
               }
+              console.log(`[${new Date().toISOString()}] ✓ SERVE: index.html (${indexData.length} bytes) [${Date.now() - startTime}ms]`);
               res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
               res.end(indexData);
             } catch (e) {
-              console.error('Error in index.html callback:', e);
+              console.error(`[${new Date().toISOString()}] ❌ ERROR in index.html callback: ${e.message}`);
               if (!res.headersSent) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
               }
@@ -96,10 +112,11 @@ const server = http.createServer((req, res) => {
         
         contentType = mimeTypes[ext] || contentType;
 
+        console.log(`[${new Date().toISOString()}] ✓ SERVE: ${path.basename(filePath)} (${data.length} bytes, ${contentType}) [${Date.now() - startTime}ms]`);
         res.writeHead(200, { 'Content-Type': contentType });
         res.end(data);
       } catch (e) {
-        console.error('Error in file read callback:', e);
+        console.error(`[${new Date().toISOString()}] ❌ ERROR in file read callback: ${e.message}`);
         if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'text/plain' });
         }
@@ -107,7 +124,8 @@ const server = http.createServer((req, res) => {
       }
     });
   } catch (err) {
-    console.error('Request handler error:', err);
+    console.error(`[${new Date().toISOString()}] ❌ CRITICAL ERROR in request handler: ${err.message}`);
+    console.error(err.stack);
     if (!res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
     }
@@ -116,9 +134,22 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('error', (err) => {
-  console.error('Server error:', err);
+  console.error(`[${new Date().toISOString()}] ❌ SERVER ERROR: ${err.message}`);
+  console.error(err.stack);
+});
+
+server.on('clientError', (err, socket) => {
+  console.error(`[${new Date().toISOString()}] ❌ CLIENT ERROR: ${err.message}`);
+  if (socket.writable) {
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  }
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`\n╔════════════════════════════════════════╗`);
+  console.log(`║  ✅ Server running on port ${PORT}       ║`);
+  console.log(`║  📂 Serving: ${DIST_DIR}`);
+  console.log(`║  🌐 Listening on: 0.0.0.0:${PORT}              ║`);
+  console.log(`║  📋 Health check: /health              ║`);
+  console.log(`╚════════════════════════════════════════╝\n`);
 });
