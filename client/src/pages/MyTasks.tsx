@@ -1,13 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
-  CheckSquare, 
-  Filter, 
+  CheckSquare,  
   Search, 
   Clock, 
   CheckCircle2, 
-  AlertCircle,
-  MoreHorizontal,
-  Plus,
   Trash2,
   Loader2,
   Calendar
@@ -15,7 +11,7 @@ import {
 import api from '../services/api';
 import { format } from 'date-fns';
 
-import CreateTaskModal from '../components/CreateTaskModal';
+// import CreateTaskModal from '../components/CreateTaskModal';
 
 
 interface Task {
@@ -32,7 +28,7 @@ export default function MyTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +102,12 @@ export default function MyTasks() {
           <p className="text-slate-500 mt-1">Everything assigned to you across all active projects.</p>
         </div>
       </header>
+
+      {error && (
+        <div className="p-4 rounded-xl bg-red-50 text-red-600 border border-red-100">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat) => (

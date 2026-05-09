@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Briefcase, 
   Users, 
-  CheckSquare, 
   Plus, 
-  Settings, 
-  ChevronLeft,
   Loader2,
   MoreVertical,
-  Calendar,
   Trash2,
   AlertCircle
 } from 'lucide-react';

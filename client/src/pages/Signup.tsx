@@ -11,19 +11,31 @@ export default function Signup() {
   const [role, setRole] = useState('member');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setLoading(true);
     setError(null);
+
     try {
-      const { data: signupData } = await api.post('/auth/signup', { name, email, password, role });
-      // Usually signup doesn't return tokens, but if it does, login here.
-      // If it doesn't, we'll login the user automatically by calling login endpoint.
-      const { data: loginData } = await api.post('/auth/login', { email, password });
+      await api.post('/auth/signup', {
+        name,
+        email,
+        password,
+        role
+      });
+
+      const { data: loginData } = await api.post('/auth/login', {
+        email,
+        password
+      });
+
       login(loginData.accessToken, loginData.user);
+
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Signup failed. Please try again.');
@@ -35,6 +47,7 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
       <div className="absolute top-0 -right-4 w-72 h-72 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+
       <div className="absolute bottom-0 -left-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
       <div className="w-full max-w-md animate-fade-in">
@@ -42,8 +55,14 @@ export default function Signup() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl shadow-xl shadow-primary-200 mb-4 transform hover:-rotate-6 transition-transform duration-300">
             <CheckCircle2 className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create Account</h1>
-          <p className="text-slate-500 mt-2">Start managing your projects like a pro</p>
+
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Create Account
+          </h1>
+
+          <p className="text-slate-500 mt-2">
+            Start managing your projects like a pro
+          </p>
         </div>
 
         <div className="card p-8 shadow-2xl shadow-slate-200/50 relative z-10">
@@ -53,13 +72,17 @@ export default function Signup() {
                 {error}
               </div>
             )}
-            
+
             <div>
-              <label className="label" htmlFor="name">Full Name</label>
+              <label className="label" htmlFor="name">
+                Full Name
+              </label>
+
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-slate-400" />
                 </div>
+
                 <input
                   id="name"
                   type="text"
@@ -73,11 +96,15 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="label" htmlFor="email">Email Address</label>
+              <label className="label" htmlFor="email">
+                Email Address
+              </label>
+
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-slate-400" />
                 </div>
+
                 <input
                   id="email"
                   type="email"
@@ -91,11 +118,15 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="label" htmlFor="password">Password</label>
+              <label className="label" htmlFor="password">
+                Password
+              </label>
+
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-slate-400" />
                 </div>
+
                 <input
                   id="password"
                   type="password"
@@ -109,11 +140,15 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="label" htmlFor="role">Role</label>
+              <label className="label" htmlFor="role">
+                Role
+              </label>
+
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Shield className="h-5 w-5 text-slate-400" />
                 </div>
+
                 <select
                   id="role"
                   className="input pl-10 appearance-none"
@@ -145,7 +180,10 @@ export default function Signup() {
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-sm text-slate-500">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+              <Link
+                to="/login"
+                className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+              >
                 Sign in instead
               </Link>
             </p>

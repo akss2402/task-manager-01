@@ -1,11 +1,9 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Briefcase, 
   CheckSquare, 
   Users, 
-  Settings, 
   LogOut,
   ChevronRight
 } from 'lucide-react';

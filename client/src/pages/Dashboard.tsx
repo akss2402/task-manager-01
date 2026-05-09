@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   CheckCircle2, 
   Clock, 
@@ -105,18 +105,18 @@ export default function Dashboard() {
     }
   };
 
-  const handleStatusUpdate = async (projectId: string, taskId: string, newStatus: string) => {
-    const previousTasks = [...tasks];
-    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-    try {
-      await api.patch(`/projects/${projectId}/tasks/${taskId}`, { status: newStatus });
-      const { data } = await api.get('/dashboard/overview');
-      setStats(data);
-    } catch (err) {
-      console.error(err);
-      setTasks(previousTasks);
-    }
-  };
+  // const handleStatusUpdate = async (projectId: string, taskId: string, newStatus: string) => {
+  //   const previousTasks = [...tasks];
+  //   setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+  //   try {
+  //     await api.patch(`/projects/${projectId}/tasks/${taskId}`, { status: newStatus });
+  //     const { data } = await api.get('/dashboard/overview');
+  //     setStats(data);
+  //   } catch (err) {
+  //     console.error(err);
+  //     setTasks(previousTasks);
+  //   }
+  // };
 
   if (loading) return (
     <div className="h-[60vh] flex items-center justify-center">

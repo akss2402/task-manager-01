@@ -26,7 +26,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSuccess, projectId:
   const { user: globalUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   
-  const isAdmin = globalUser?.role === 'admin';
+  // const isAdmin = globalUser?.role === 'admin';
 
   useEffect(() => {
     if (isOpen && !initialProjectId) {
